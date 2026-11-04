@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Servidor local de Fase, solo accesible desde este Mac."""
+"""Servidor local de De Cero a Electricista, solo accesible desde este Mac."""
 import http.server, os, sys, threading, time
 os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 class H(http.server.SimpleHTTPRequestHandler):

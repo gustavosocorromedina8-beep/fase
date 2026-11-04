@@ -1,10 +1,10 @@
-# Fase
+# De Cero a Electricista
 
 App de estudio para el ciclo de Instalaciones Eléctricas y Automáticas. Funciona sin internet y sin Claude.
 
 ## Abrirla en el Mac
 
-Haz doble clic en `Abrir Fase.command` y deja abierta esa ventana mientras la usas.
+Haz doble clic en `Abrir De Cero a Electricista.command` y deja abierta esa ventana mientras la usas.
 La primera vez, macOS puede pedirte confirmación: clic derecho, Abrir.
 
 ## Instalarla en el iPhone o el iPad
@@ -14,7 +14,7 @@ Después:
 
 1. Abre la dirección en Safari.
 2. Toca Compartir y elige Añadir a pantalla de inicio.
-3. Abre Fase desde el icono, con WiFi, para que se guarde completa.
+3. Abre De Cero a Electricista desde el icono, con WiFi, para que se guarde completa.
 4. En Dudas, sube la palanca de la IA para descargar el modelo.
 
 Necesita iOS 26 o posterior para la IA. El temario y los cálculos funcionan igualmente.

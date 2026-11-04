@@ -4,7 +4,7 @@ Ejecútalo cada vez que cambies archivos de la app; la versión se calcula sola.
 import hashlib, json, os
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 EXCLUIR = {'scripts', '.claude', '.git', '.taste-skill'}
-FUERA = {'sw.js', 'archivos.js', 'Abrir Fase.command', 'LEEME.md'}
+FUERA = {'sw.js', 'archivos.js', 'Abrir De Cero a Electricista.command', 'LEEME.md'}
 lista, huella = ['./'], hashlib.sha256()
 for base, dirs, nombres in os.walk(RAIZ):
     dirs[:] = sorted(d for d in dirs if d not in EXCLUIR)
