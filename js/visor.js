@@ -4,40 +4,56 @@ import { urlFoto, guardarBlob, buscarInternet, internetActivo } from './fotos.js
 import { BANCO } from './banco.js';
 import { guardar, leer, borrar } from './db.js';
 import { h, hoja, cerrarHoja, ir, aviso } from './app.js';
+import { programa, svgPrograma } from './plc.js';
 
-export const TEMAS = { cuadro: 'Cuadro', neutro: 'Neutro', cobre: 'Cobre', noche: 'Noche' };
-const conFoto = new Set(['portada', 'foto', 'fotoD', 'cierre']);
-const lista = (s, k) => `<ul>${(s.puntos ?? []).map((p, i) => `<li data-campo="puntos" data-i="${i}" data-k="${k}">${h(p)}</li>`).join('')}</ul>`;
+export const TEMAS = { voltio: 'Voltio: azul eléctrico', turquesa: 'Turquesa', coral: 'Coral', solar: 'Solar: amarillo', noche: 'Noche' };
+const conFoto = new Set(['portada', 'foto', 'fotoD', 'cierre', 'separador']);
+const md = (s) => h(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*\*/g, '');
+const lista = (s) => (s.puntos?.length ? `<ul>${s.puntos.map((p, i) => `<li data-campo="puntos" data-i="${i}">${md(p)}</li>`).join('')}</ul>` : '');
 const titulo = (s, tag = 'h2') => `<${tag} data-campo="titulo">${h(s.titulo ?? '')}</${tag}>`;
-const figura = (s) => `<figure class="d-foto">${s.foto ? `<img alt="${h(s.titulo ?? '')}" data-foto>` : ''}${s.foto?.credito ? `<figcaption>${h(s.foto.credito)}</figcaption>` : ''}</figure>`;
+const figuraFoto = (s) => `<figure class="d-foto${s.foto?.credito?.startsWith('Página') ? ' de-pagina' : ''}">${s.foto ? `<img alt="" data-foto>` : ''}${s.foto?.credito ? `<figcaption>${h(s.foto.credito)}</figcaption>` : ''}</figure>`;
 const fuente = (s) => (s.fuente ? `<p class="d-fuente">${h(s.fuente)}</p>` : '');
+const figs = (s) => (s.figuras?.length ? `<div class="d-figs" data-n="${s.figuras.length}">${s.figuras.map((f, i) => `<figure class="d-fig"><img alt="${h(f.pie ?? '')}" data-fig="${i}"><figcaption>${h(f.pie ?? '')}</figcaption></figure>`).join('')}</div>` : '');
+const ecs = (s) => (s.ecuaciones?.length ? `<div class="d-ecs">${s.ecuaciones.map((f, i) => `<img alt="${h(f.texto ?? 'Fórmula')}" data-eq="${i}">`).join('')}</div>` : '');
 
 export function htmlDiapo(s) {
   switch (s.tipo) {
-    case 'portada': return `${figura(s)}<div class="d-texto">${titulo(s, 'h1')}${s.frase ? `<p data-campo="frase">${h(s.frase)}</p>` : ''}</div>`;
-    case 'foto': case 'fotoD': return `${figura(s)}<div class="d-texto">${titulo(s)}${lista(s, 0)}${fuente(s)}</div>`;
-    case 'lista': case 'campo': return `<div class="d-texto">${titulo(s)}${lista(s, 0)}${fuente(s)}</div>`;
+    case 'portada': return `${figuraFoto(s)}<div class="d-texto">${titulo(s, 'h1')}${s.frase ? `<p data-campo="frase">${h(s.frase)}</p>` : ''}</div>`;
+    case 'indice': return `<div class="d-texto">${titulo(s)}<ol class="d-indice">${s.puntos.map((p, i) => `<li data-campo="puntos" data-i="${i}">${h(p)}</li>`).join('')}</ol></div>`;
+    case 'separador': return `${figuraFoto(s)}<div class="d-texto">${s.frase ? `<p data-campo="frase">${h(s.frase)}</p>` : ''}${titulo(s, 'h1')}</div>`;
+    case 'figura': case 'figuraD': return `<div class="d-texto">${titulo(s)}${lista(s)}${ecs(s)}${fuente(s)}</div>${figs(s)}`;
+    case 'galeria': return `<div class="d-texto d-cab">${titulo(s)}${fuente(s)}</div>${figs(s)}`;
+    case 'ecuaciones': return `<div class="d-texto">${titulo(s)}${lista(s)}${fuente(s)}</div>${ecs(s)}`;
+    case 'foto': case 'fotoD': return `${figuraFoto(s)}<div class="d-texto">${titulo(s)}${lista(s)}${fuente(s)}</div>`;
+    case 'apartado': case 'campo': return `<div class="d-texto">${titulo(s)}${lista(s)}${fuente(s)}</div>`;
     case 'formula': return `<div class="d-texto">${titulo(s, 'h3')}<p class="d-formula" data-campo="formula">${h(s.formula)}</p>${s.frase ? `<p data-campo="frase">${h(s.frase)}</p>` : ''}${fuente(s)}</div>`;
     case 'tabla': return `<div class="d-texto">${titulo(s)}<table><thead><tr>${s.tabla.cabecera.map((c) => `<th>${h(c)}</th>`).join('')}</tr></thead><tbody>${s.tabla.filas.map((f) => `<tr>${f.map((c) => `<td>${h(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>${fuente(s)}</div>`;
-    case 'esquema': return `<div class="d-texto">${titulo(s)}${lista(s, 0)}${fuente(s)}</div><figure class="d-esquema" aria-label="${h(ESQUEMAS[s.esquema]?.alt ?? '')}">${ESQUEMAS[s.esquema]?.svg ?? ''}</figure>`;
-    default: return `<div class="d-texto">${titulo(s)}${lista(s, 0)}</div>`;
+    case 'esquema': return `<div class="d-texto">${titulo(s)}${lista(s)}${fuente(s)}</div><figure class="d-esquema" aria-label="${h(ESQUEMAS[s.esquema]?.alt ?? '')}">${ESQUEMAS[s.esquema]?.svg ?? ''}</figure>`;
+    case 'ladder': { const p = programa(s.ladder); return `<div class="d-texto d-cab">${titulo(s)}${p ? `<p>${h(p.desc)}</p>` : ''}</div><figure class="d-ladder">${p ? svgPrograma(p) : ''}</figure>`; }
+    case 'cierre': return `${figuraFoto(s)}<div class="d-texto">${titulo(s)}${lista(s)}</div>`;
+    default: return `<div class="d-texto">${titulo(s)}${lista(s)}</div>`;
   }
 }
 export async function pintarDiapo(nodo, s, tema) {
-  nodo.className = `diapo s-${s.tipo}`; nodo.dataset.tema = tema; nodo.innerHTML = htmlDiapo(s);
-  const img = nodo.querySelector('[data-foto]');
-  if (img) img.src = await urlFoto(s.foto);
+  const largo = (s.puntos ?? []).join(' ').length;
+  nodo.className = `diapo s-${s.tipo}${s.figuras?.length ? ' con-figs' : ''}${largo && largo < 320 ? ' poco' : ''}`; nodo.dataset.tema = tema in TEMAS ? tema : 'voltio'; nodo.innerHTML = htmlDiapo(s);
+  const img = nodo.querySelector('[data-foto]'); if (img) img.src = await urlFoto(s.foto);
+  const cargas = [];
+  nodo.querySelectorAll('[data-fig]').forEach((im) => { cargas.push(urlFoto(s.figuras[+im.dataset.fig]).then((u) => { im.src = u; return im.decode?.().catch(() => {}); })); });
+  nodo.querySelectorAll('[data-eq]').forEach((im) => { cargas.push(urlFoto(s.ecuaciones[+im.dataset.eq]).then((u) => { im.src = u; return im.decode?.().catch(() => {}); })); });
+  await Promise.all(cargas);
   ajustar(nodo);
 }
 // Reduce el texto de la diapositiva hasta que quepa; nunca se corta contenido.
 export function ajustar(nodo) {
   const t = nodo.querySelector('.d-texto'); if (!t || !nodo.clientWidth) return;
-  const desborda = () => t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1 || t.getBoundingClientRect().bottom > nodo.getBoundingClientRect().bottom + 1 || t.getBoundingClientRect().top < nodo.getBoundingClientRect().top - 1;
+  const rn = () => nodo.getBoundingClientRect();
+  const desborda = () => { const b = rn(); const r = t.getBoundingClientRect(); const tit = t.querySelector('h1,h2,h3'); return (tit && tit.scrollWidth > tit.clientWidth + 1) || t.scrollHeight > t.clientHeight + 1 || t.scrollWidth > t.clientWidth + 1 || r.bottom > b.bottom + 1 || r.top < b.top - 1; };
   let k = 1; nodo.style.setProperty('--k', k);
-  while (desborda() && k > 0.4) { k -= 0.05; nodo.style.setProperty('--k', k.toFixed(2)); }
+  while (desborda() && k > 0.5) { k -= 0.04; nodo.style.setProperty('--k', k.toFixed(2)); }
 }
 
-let estado = null;
+let estado = null, obs = null;
 export async function vistaVisor(raiz, id, presentar) {
   const clase = await leer('clases', id);
   if (!clase) { ir('#clases'); return; }
@@ -51,29 +67,41 @@ export async function vistaVisor(raiz, id, presentar) {
     <div class="visor-edicion" data-edicion hidden>
       <button class="btn" data-acc="foto">Cambiar foto</button><button class="btn" data-acc="tema">Colores</button><button class="btn" data-acc="quitar">Quitar diapositiva</button><button class="btn" data-acc="borrar">Borrar la clase</button>
     </div>
+    <details class="notas" data-notas hidden><summary>Texto completo de este apartado</summary><div data-notas-t></div></details>
     <ol class="tiras" data-tiras aria-label="Todas las diapositivas"></ol>
   </section>`;
   raiz.onclick = accion;
-  raiz.oninput = null;
   raiz.addEventListener('focusout', guardarTexto);
-  await pintarTiras(); await mostrar(0, 0);
+  pintarTiras(); await mostrar(0, 0);
   iniciarGestos(raiz.querySelector('[data-escena]'));
   if (presentar) abrirPresentacion();
 }
-async function pintarTiras() {
+// Las miniaturas se dibujan solo al hacerse visibles: una clase puede tener cientos.
+function pintarTiras() {
   const t = document.querySelector('[data-tiras]'); if (!t) return;
+  obs?.disconnect();
   t.innerHTML = estado.clase.slides.map((s, i) => `<li><button data-ir="${i}" aria-label="Ir a la diapositiva ${i + 1}: ${h(s.titulo ?? '')}"><div class="diapo-mini"><div class="diapo" data-m="${i}"></div></div></button></li>`).join('');
-  await Promise.all(estado.clase.slides.map((s, i) => pintarDiapo(t.querySelector(`[data-m="${i}"]`), s, estado.clase.tema)));
-  t.querySelectorAll('[data-campo]').forEach((n) => n.removeAttribute('data-campo'));
+  obs = new IntersectionObserver((es) => {
+    for (const e of es) {
+      if (!e.isIntersecting) continue;
+      obs.unobserve(e.target); const k = +e.target.dataset.m;
+      pintarDiapo(e.target, estado.clase.slides[k], estado.clase.tema).then(() => e.target.querySelectorAll('[data-campo]').forEach((n) => n.removeAttribute('data-campo')));
+    }
+  }, { root: t, rootMargin: '300px' });
+  t.querySelectorAll('[data-m]').forEach((n) => obs.observe(n));
 }
 async function mostrar(i, dir = 1) {
   const c = estado.clase; estado.i = Math.max(0, Math.min(i, c.slides.length - 1));
   const n = document.querySelector('[data-diapo]'); if (!n) return;
-  await pintarDiapo(n, c.slides[estado.i], c.tema);
+  const s = c.slides[estado.i];
+  await pintarDiapo(n, s, c.tema);
   n.style.setProperty('--dir', dir);
   if (dir) { n.classList.remove('entra'); void n.offsetWidth; n.classList.add('entra'); }
   document.querySelector('[data-cuenta]').textContent = `${estado.i + 1} de ${c.slides.length}`;
   document.querySelectorAll('[data-tiras] button').forEach((b, k) => { const on = k === estado.i; b.toggleAttribute('data-activa', on); if (on) b.scrollIntoView?.({ inline: 'center', block: 'nearest', behavior: 'smooth' }); });
+  const nt = document.querySelector('[data-notas]');
+  nt.hidden = !s.notas;
+  if (s.notas) document.querySelector('[data-notas-t]').innerHTML = s.notas.split('\n\n').map((p) => `<p>${h(p)}</p>`).join('');
   aplicarEdicion();
 }
 function aplicarEdicion() {
@@ -98,7 +126,7 @@ async function accion(e) {
   if (a === 'tema') elegirTema();
   if (a === 'quitar') {
     if (estado.clase.slides.length < 2) return;
-    estado.clase.slides.splice(estado.i, 1); await guardar('clases', estado.clase); await pintarTiras(); mostrar(estado.i, 0);
+    estado.clase.slides.splice(estado.i, 1); await guardar('clases', estado.clase); pintarTiras(); mostrar(estado.i, 0);
   }
   if (a === 'borrar') {
     hoja(`<h2>¿Borrar esta clase?</h2><p>Se eliminará «${h(estado.clase.titulo)}» de este dispositivo y no se podrá recuperar.</p><div class="fila"><button class="btn" data-cerrar>Cancelar</button><button class="btn btn-peligro" data-si>Borrar</button></div>`, (d) => {
@@ -108,13 +136,14 @@ async function accion(e) {
 }
 function elegirTema() {
   hoja(`<h2>Colores de la clase</h2><div class="temas">${Object.entries(TEMAS).map(([k, v]) => `<button class="tema-op" data-t="${k}"><span class="muestra" data-tema="${k}"></span>${v}</button>`).join('')}</div><button class="btn" data-cerrar>Cerrar</button>`, (d) => {
-    d.querySelectorAll('[data-t]').forEach((b) => { b.onclick = async () => { estado.clase.tema = b.dataset.t; await guardar('clases', estado.clase); cerrarHoja(); await pintarTiras(); mostrar(estado.i, 0); }; });
+    d.querySelectorAll('[data-t]').forEach((b) => { b.onclick = async () => { estado.clase.tema = b.dataset.t; await guardar('clases', estado.clase); cerrarHoja(); pintarTiras(); mostrar(estado.i, 0); }; });
   });
 }
 function elegirFoto() {
   const s = estado.clase.slides[estado.i];
-  if (!conFoto.has(s.tipo)) return aviso('Esta diapositiva no lleva foto.');
-  const dePdf = estado.clase.fotosPdf ?? [];
+  const esFig = s.figuras?.length; 
+  if (!conFoto.has(s.tipo) && !esFig) return aviso('Esta diapositiva no lleva foto.');
+  const dePdf = estado.clase.slides.flatMap((x) => x.figuras ?? []).slice(0, 40);
   hoja(`<h2>Cambiar foto</h2>
     <label class="btn btn-accion subir">Elegir de tu galería o cámara<input type="file" accept="image/*" data-sube hidden></label>
     <form class="busca-foto" data-busca ${internetActivo() ? '' : 'hidden'}><label for="bf">Buscar en internet</label><div class="fila"><input id="bf" class="campo" placeholder="Por ejemplo, circuit breaker"><button class="btn">Buscar</button></div></form>
@@ -122,7 +151,7 @@ function elegirFoto() {
     ${dePdf.length ? '<h3>De tu PDF</h3><div class="rejilla-fotos" data-pdf></div>' : ''}
     <h3>Banco incluido</h3><div class="rejilla-fotos">${BANCO.map((f, i) => `<button data-b="${i}" aria-label="Foto ${i + 1}"><img loading="lazy" src="${f.src}" alt=""></button>`).join('')}</div>
     <button class="btn" data-cerrar>Cerrar</button>`, async (d) => {
-    const poner = async (f) => { s.foto = f; await guardar('clases', estado.clase); cerrarHoja(); await pintarTiras(); mostrar(estado.i, 0); };
+    const poner = async (f) => { if (esFig) s.figuras[0] = { ...f, pie: f.pie ?? s.figuras[0].pie }; else s.foto = f; await guardar('clases', estado.clase); cerrarHoja(); pintarTiras(); mostrar(estado.i, 0); };
     d.querySelectorAll('[data-b]').forEach((b) => { b.onclick = () => { const f = BANCO[+b.dataset.b]; poner({ src: f.src, credito: f.credito }); }; });
     d.querySelector('[data-sube]').onchange = async (e) => { const a = e.target.files[0]; if (a) poner(await guardarBlob(a, '')); };
     const zona = d.querySelector('[data-pdf]');

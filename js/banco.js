@@ -1,6 +1,30 @@
 // Fotos con licencia libre de Wikimedia Commons, elegidas una a una.
 export const BANCO = [
 {
+"src": "assets/photos/g033.jpg",
+"tags": [
+"plc"
+],
+"credito": "UlrichAAB · CC BY-SA 3.0",
+"creditoLargo": "Simatic S7-1200.JPG · UlrichAAB · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Simatic_S7-1200.JPG"
+},
+{
+"src": "assets/photos/g034.jpg",
+"tags": [
+"plc"
+],
+"credito": "MakeMagazinDE · CC BY-SA 4.0",
+"creditoLargo": "Siemens sps logo 8 12-24 RCE-03.jpg · MakeMagazinDE · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Siemens_sps_logo_8_12-24_RCE-03.jpg"
+},
+{
+"src": "assets/photos/g037.jpg",
+"tags": [
+"plc"
+],
+"credito": "Stehfun 10:56, 13 August 2006 (UTC) · CC BY 2.5",
+"creditoLargo": "Siemens Logo.jpg · Stehfun 10:56, 13 August 2006 (UTC) · CC BY 2.5 · https://commons.wikimedia.org/wiki/File:Siemens_Logo.jpg"
+},
+{
 "src": "assets/photos/f000.jpg",
 "tags": [
 "magnetotermico",
@@ -293,5 +317,93 @@ export const BANCO = [
 ],
 "credito": "Amuzujoe · CC BY-SA 4.0",
 "creditoLargo": "Car electrician 05.jpg · Amuzujoe · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Car_electrician_05.jpg"
+},
+{
+"src": "assets/photos/g003.jpg",
+"tags": [
+"antena"
+],
+"credito": "Merja Partanen, Mikkeli, Finland · CC0",
+"creditoLargo": "Antenna-178969.jpg · Merja Partanen, Mikkeli, Finland · CC0 · https://commons.wikimedia.org/wiki/File:Antenna-178969.jpg"
+},
+{
+"src": "assets/photos/g000.jpg",
+"tags": [
+"antena"
+],
+"credito": "Daniel Christensen (talk) · CC BY 3.0",
+"creditoLargo": "Aerial antenna.JPG · Daniel Christensen (talk) · CC BY 3.0 · https://commons.wikimedia.org/wiki/File:Aerial_antenna.JPG"
+},
+{
+"src": "assets/photos/g005.jpg",
+"tags": [
+"eolica"
+],
+"credito": "Photo by Kim Hansen. Postprocessing (crop, rotatio · CC BY-SA 3.0",
+"creditoLargo": "Middelgrunden wind farm 2009-07-01 edit filtered.jpg · Photo by Kim Hansen. Postprocessing (crop, rotation, color adjustment, dust spot · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Middelgrunden_wind_farm_2009-07-01_edit_filtered.jpg"
+},
+{
+"src": "assets/photos/g016.jpg",
+"tags": [
+"eolica"
+],
+"credito": "Philip May · CC BY-SA 3.0",
+"creditoLargo": "Windrad-Wind-Turbine.jpg · Philip May · CC BY-SA 3.0 · https://commons.wikimedia.org/wiki/File:Windrad-Wind-Turbine.jpg"
+},
+{
+"src": "assets/photos/g013.jpg",
+"tags": [
+"eolica"
+],
+"credito": "Crisco 1492 · CC BY-SA 4.0",
+"creditoLargo": "Wind turbines along North Middle Road, Essex County, Ontario, 2025-06-29.jpg · Crisco 1492 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Wind_turbines_along_North_Middle_Road,_Essex_County,_Ontario,_2025-06-29.jpg"
+},
+{
+"src": "assets/photos/g023.jpg",
+"tags": [
+"fibra"
+],
+"credito": "Asurnipal · CC BY-SA 4.0",
+"creditoLargo": "Optical fiber cable-10ASD.jpg · Asurnipal · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Optical_fiber_cable-10ASD.jpg"
+},
+{
+"src": "assets/photos/g026.jpg",
+"tags": [
+"fibra"
+],
+"credito": "Asurnipal · CC BY-SA 4.0",
+"creditoLargo": "Optical fiber connectors-Splice box-01ASD.jpg · Asurnipal · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Optical_fiber_connectors-Splice_box-01ASD.jpg"
+},
+{
+"src": "assets/photos/g030.jpg",
+"tags": [
+"red"
+],
+"credito": "Dsimic · CC BY-SA 4.0",
+"creditoLargo": "19-inch rackmount Ethernet switches and patch panels.jpg · Dsimic · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:19-inch_rackmount_Ethernet_switches_and_patch_panels.jpg"
+},
+{
+"src": "assets/photos/g031.jpg",
+"tags": [
+"red"
+],
+"credito": "Autor en Wikimedia Commons · Public domain",
+"creditoLargo": "Cable closet bh.jpg · Autor en Wikimedia Commons · Public domain · https://commons.wikimedia.org/wiki/File:Cable_closet_bh.jpg"
+},
+{
+"src": "assets/photos/g039.jpg",
+"tags": [
+"solar"
+],
+"credito": "Asurnipal · CC BY-SA 4.0",
+"creditoLargo": "Lauterach-DC-Inverter and DC-surge protection device-photovoltaic-01ASD.jpg · Asurnipal · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Lauterach-DC-Inverter_and_DC-surge_protection_device-photovoltaic-01ASD.jpg"
+},
+{
+"src": "assets/photos/g043.jpg",
+"tags": [
+"hidro"
+],
+"credito": "BuzzWeiser196 · CC BY-SA 4.0",
+"creditoLargo": "Turbine Deck Hydroelectric Power Plant.jpg · BuzzWeiser196 · CC BY-SA 4.0 · https://commons.wikimedia.org/wiki/File:Turbine_Deck_Hydroelectric_Power_Plant.jpg"
 }
 ];

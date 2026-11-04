@@ -11,6 +11,8 @@ const REGLAS = [
   [/multímetro|multimetro|medida|medir|volt[ií]metro|amper[ií]metro|mult[ií]metro/i, ['multimetro', 'pinza']],
   [/pinza/i, ['pinza']], [/osciloscop|senoidal|onda|alterna/i, ['osciloscopio', 'torre']],
   [/diodo|transistor|electr[oó]nic|semiconductor|condensador|resistencia/i, ['componentes', 'pcb']],
+  [/antena|tdt|televisi|rtv|ict\b|coaxial/i, ['antena', 'cables']], [/fibra/i, ['fibra', 'red']], [/\bred(es)?\b|rj45|switch|router|ethernet/i, ['red', 'cables']],
+  [/e[oó]lic|aerogenerador|viento/i, ['eolica', 'torre']], [/hidr[aá]ulic|turbina/i, ['hidro']],
   [/\bled\b|l[aá]mpara|alumbrado|iluminaci|bombilla/i, ['led', 'bombilla']],
   [/enchufe|toma de|vivienda|baño/i, ['enchufe', 'cuadro']],
   [/cable|conductor|secci[oó]n|cobre|ca[ií]da de tensi/i, ['cables', 'tubo']],
@@ -45,7 +47,7 @@ export async function urlFoto(foto) {
   const u = URL.createObjectURL(r.blob); urls.set(foto.id, u); return u;
 }
 export const internetActivo = () => navigator.onLine && ajustes.leer('fotosInternet', true);
-const INGLES = { magnetotermico: 'circuit breaker', cuadro: 'electrical panel', contactor: 'contactor relay', armario: 'control cabinet', plc: 'programmable logic controller', motor: 'electric motor', transformador: 'transformer substation', torre: 'power lines', tierra: 'grounding rod', cables: 'electrical cables', multimetro: 'multimeter', pinza: 'clamp meter', osciloscopio: 'oscilloscope', componentes: 'electronic components', pcb: 'circuit board', led: 'LED lamp', bombilla: 'light bulb', enchufe: 'socket outlet', tubo: 'electrical conduit', electricista: 'electrician', solar: 'solar panels', soldar: 'soldering' };
+const INGLES = { magnetotermico: 'circuit breaker', cuadro: 'electrical panel', contactor: 'contactor relay', armario: 'control cabinet', plc: 'programmable logic controller', motor: 'electric motor', transformador: 'transformer substation', torre: 'power lines', tierra: 'grounding rod', cables: 'electrical cables', multimetro: 'multimeter', pinza: 'clamp meter', osciloscopio: 'oscilloscope', componentes: 'electronic components', pcb: 'circuit board', led: 'LED lamp', bombilla: 'light bulb', enchufe: 'socket outlet', tubo: 'electrical conduit', electricista: 'electrician', solar: 'solar panels', antena: 'TV antenna', fibra: 'optical fiber', red: 'network switch', eolica: 'wind turbine', hidro: 'hydroelectric turbine', soldar: 'soldering' };
 // Solo envía a Wikimedia las palabras de búsqueda, nunca el contenido del PDF.
 export async function buscarInternet(consulta, n = 12) {
   const u = 'https://commons.wikimedia.org/w/api.php?' + new URLSearchParams({ action: 'query', format: 'json', origin: '*', generator: 'search', gsrsearch: `${consulta} filetype:bitmap`, gsrnamespace: 6, gsrlimit: 24, prop: 'imageinfo', iiprop: 'url|size|extmetadata|mime', iiurlwidth: 1280 });

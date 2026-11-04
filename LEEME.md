@@ -21,9 +21,11 @@ Necesita iOS 26 o posterior para la IA. El temario y los cálculos funcionan igu
 
 ## Qué hace cada apartado
 
-- **Clases**: crea una presentación desde un PDF, indicando páginas, tema o palabras clave, o desde lo que escribas.
+- **Clases**: crea una presentación desde un PDF, eligiendo el PDF entero, un tema, páginas o palabras clave, con las figuras del propio documento.
+- **Exámenes**: crea exámenes tipo test o a desarrollar desde un PDF o el temario, y los corrige.
+- **PLC**: programas en Ladder (KOP) con simulador, en direcciones de TIA Portal o LOGO!, y teoría.
 - **Dudas**: resuelve preguntas. Calcula con exactitud, consulta el temario y, si la enciendes, usa la IA local.
-- **Temario**: fichas de estudio de REBT, protecciones, máquinas, automatismos y electrónica.
+- **Temario**: fichas de estudio de REBT, protecciones, máquinas, automatismos, PLC, telecomunicaciones, renovables y electrónica.
 - **Cálculo**: seis calculadoras con fórmulas exactas.
 - **Ajustes**: modelo de IA, fotos de internet, espacio usado y créditos de las fotos.
 
@@ -36,6 +38,8 @@ Necesita iOS 26 o posterior para la IA. El temario y los cálculos funcionan igu
 ## Limitaciones
 
 - Los PDF escaneados, sin texto seleccionable, no se pueden leer.
+- Las figuras se recortan por su pie («Figura 1.2»): si un PDF no las rotula, no se detectan.
+- La nota de un examen a desarrollar es orientativa: mide qué ideas clave aparecen, no la calidad de la explicación.
 - El modelo Ligero solo responde si hay una ficha del temario sobre la pregunta.
 - La tabla de intensidades admisibles de la ITC-BT-19 no está incluida: compruébala siempre al calcular una sección.
 

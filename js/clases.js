@@ -1,30 +1,26 @@
 // Apartado de presentaciones: formulario, generación y clases guardadas.
-import { h, ir, palanca, aviso } from './app.js';
+import { h, ir } from './app.js';
 import { todos, guardar, uid } from './db.js';
-import { abrirPdf, elegirPaginas, imagenesDe } from './pdf.js';
-import { secciones, desdeSecciones, desdeTemario, desdeIA, fichasDe } from './clase.js';
+import { apartadosDe, recortar, portadaDe } from './pdf.js';
+import { desdeApartados, desdeTemario, desdeIA, fichasDe } from './clase.js';
 import { delBanco, guardarBlob, urlFoto, internetActivo, fotoInternet } from './fotos.js';
 import { BANCO } from './banco.js';
 import { ia } from './ia.js';
 import { TEMAS } from './visor.js';
+import { montarSelector, estadoPdf } from './selector.js';
 
-let pdfActual = null, nombrePdf = '';
-const conFoto = new Set(['portada', 'foto', 'fotoD', 'cierre']);
+const conFoto = new Set(['portada', 'foto', 'fotoD', 'cierre', 'separador']);
 
 export async function vistaClases(raiz) {
-  raiz.innerHTML = `<section class="seccion" data-hilo="marron">
-    <header class="cabeza"><h1>Clases</h1><p>Sube tu PDF o escribe qué entra. Te monto la presentación con fotos.</p></header>
+  raiz.innerHTML = `<section class="seccion" data-hilo="azul">
+    <header class="cabeza"><h1>Clases</h1><p>Sube tu PDF y elige el tema. Te monto la clase con sus propias figuras.</p></header>
     <form class="form-clase" data-form>
-      <div class="zona-pdf" data-zona>
-        <label class="btn btn-grande" for="pdf">Elegir PDF</label><input id="pdf" type="file" accept="application/pdf" class="oculto">
-        <p data-pdf-info>${pdfActual ? h(`${nombrePdf}: ${pdfActual.total} páginas`) : 'Opcional. Tu PDF no sale de este dispositivo.'}</p>
-      </div>
-      <label for="que">¿Qué entra?</label>
-      <textarea id="que" class="campo" rows="3" placeholder="Páginas 12 a 18, tema 3, o circuitos de una vivienda y diferenciales"></textarea>
+      <div data-selector></div>
       <div class="fila-op">
-        <div><label for="n">Diapositivas</label><select id="n" class="campo">${[6, 8, 10, 14, 20].map((n) => `<option ${n === 10 ? 'selected' : ''}>${n}</option>`).join('')}</select></div>
+        <div><label for="det">Información</label><select id="det" class="campo"><option value="breve">Resumida</option><option value="normal" selected>Normal</option><option value="completa">Completa: todo el texto</option></select></div>
         <div><label for="t">Colores</label><select id="t" class="campo">${Object.entries(TEMAS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
       </div>
+      <label class="check" data-ia-op hidden><input type="checkbox" id="conia"> Reescribir con la IA local. Es más lento y puede cambiar matices; lo que invente cifras se descarta.</label>
       <button class="btn btn-accion btn-grande" data-crear>Crear la presentación</button>
       <p class="error" data-err role="alert" hidden></p>
     </form>
@@ -32,75 +28,64 @@ export async function vistaClases(raiz) {
     <section class="guardadas"><h2>Tus clases</h2><div class="lista-clases" data-lista></div></section>
   </section>`;
   const q = (s) => raiz.querySelector(s);
-  q('#pdf').onchange = async (e) => {
-    const a = e.target.files[0]; if (!a) return;
-    q('[data-pdf-info]').textContent = 'Leyendo el PDF…';
-    try {
-      pdfActual = await abrirPdf(a); nombrePdf = a.name.replace(/\.pdf$/i, '');
-      q('[data-pdf-info]').textContent = pdfActual.escaneado
-        ? `${nombrePdf}: ${pdfActual.total} páginas. Parece escaneado y apenas tiene texto, así que no puedo leerlo. Escribe abajo qué entra para usar el temario.`
-        : `${nombrePdf}: ${pdfActual.total} páginas.`;
-      if (pdfActual.escaneado) pdfActual = null;
-    } catch { pdfActual = null; q('[data-pdf-info]').textContent = 'No he podido abrir ese PDF. Puede estar dañado o tener contraseña.'; }
-  };
-  q('[data-form]').onsubmit = (e) => { e.preventDefault(); crear(raiz); };
+  const selector = montarSelector(q('[data-selector]'));
+  q('[data-ia-op]').hidden = !ia.lista;
+  q('[data-form]').onsubmit = (e) => { e.preventDefault(); crear(raiz, selector); };
   pintarLista(raiz);
 }
-
 async function pintarLista(raiz) {
   const cont = raiz.querySelector('[data-lista]'); if (!cont) return;
   const cs = (await todos('clases')).sort((a, b) => b.creada - a.creada);
-  if (!cs.length) { cont.innerHTML = '<p class="vacio">Aún no hay ninguna. Prueba a escribir «motor asíncrono» y crea la primera.</p>'; return; }
+  if (!cs.length) { cont.innerHTML = '<p class="vacio">Aún no hay ninguna. Sube un PDF o escribe «motor asíncrono» para crear la primera.</p>'; return; }
   cont.innerHTML = cs.map((c) => `<a class="clase-item" href="#clase/${c.id}"><span class="clase-foto"><img alt="" data-c="${c.id}"></span><strong>${h(c.titulo)}</strong><span>${c.slides.length} diapositivas</span></a>`).join('');
-  for (const c of cs) { const im = cont.querySelector(`[data-c="${c.id}"]`); if (im) im.src = await urlFoto(c.slides.find((s) => s.foto)?.foto); }
+  for (const c of cs) { const im = cont.querySelector(`[data-c="${c.id}"]`); const f = c.slides.find((s) => s.foto)?.foto ?? c.slides.find((s) => s.figuras?.length)?.figuras[0]; if (im && f) im.src = await urlFoto(f); }
 }
+const sinNumero = (t) => t.replace(/^\d+[.)]?\s*/, '');
+const cap = (t) => t.charAt(0).toUpperCase() + t.slice(1);
 
-async function crear(raiz) {
+async function crear(raiz, selector) {
   const q = (s) => raiz.querySelector(s);
-  const peticion = q('#que').value.trim(); const err = q('[data-err]');
-  const maxDiapos = +q('#n').value; const tema = q('#t').value;
-  err.hidden = true;
+  const err = q('[data-err]'); err.hidden = true;
   const fallo = (m) => { err.textContent = m; err.hidden = false; };
-  if (!pdfActual && peticion.length < 3) return fallo('Elige un PDF o escribe qué entra.');
+  const { texto, pdf, sel } = selector.obtener();
+  if (!pdf && texto.length < 3) return fallo('Elige un PDF o escribe qué entra.');
+  if (pdf && !sel.paginas.length) return fallo(`${sel.como}.`);
+  const detalle = q('#det').value; const tema = q('#t').value; const usarIA = q('#conia')?.checked && ia.lista;
   let cancelado = false;
   const prog = q('[data-prog]'); const form = q('[data-form]');
   form.hidden = true; prog.hidden = false;
   q('[data-cancel]').onclick = () => { cancelado = true; ia.parar(); };
   const avance = (f, t) => { q('[data-prog-txt]').textContent = t; q('[data-prog-b]').style.transform = `scaleX(${f})`; };
+  const pausa = () => new Promise((r) => setTimeout(r));
   try {
-    let slides, tituloClase, avisoIA = '', imgs = [];
-    if (pdfActual) {
-      const sel = elegirPaginas(pdfActual, peticion);
-      if (!sel.paginas.length) throw new Error(`${sel.como}. Prueba con los números de página.`);
-      avance(0.05, `Leyendo ${sel.como}…`);
-      const secs = secciones(pdfActual, sel.paginas);
+    let slides, titulo, aviso = '';
+    if (pdf) {
+      avance(0.03, `Leyendo ${sel.como}…`); await pausa();
+      const secs = apartadosDe(pdf, sel);
       if (!secs.length) throw new Error('Esas páginas no tienen texto que se pueda leer. Prueba con otras.');
-      const generica = !peticion || /^\s*(p[aá]g|tema|unidad|ud\b|cap[ií]tulo|bloque)|^[\d\s,-]+$/i.test(peticion);
-      const limpia = (secs.find((s) => s.titulo)?.titulo ?? nombrePdf).replace(/^(tema|unidad|ud\.?|cap[ií]tulo|bloque)\s*\d+\s*[.:–-]?\s*/i, '');
-      tituloClase = generica ? limpia || nombrePdf : peticion.slice(0, 60);
-      const r = await desdeSecciones(secs, tituloClase, { maxDiapos, cancelada: () => cancelado, alAvance: (f, t) => avance(0.1 + f * 0.75, ia.lista ? `La IA está redactando: ${t}` : `Resumiendo: ${t}`) });
+      titulo = sel.todo ? cap(estadoPdf.nombre) : sel.temas?.length === 1 ? sinNumero(sel.temas[0].titulo) : sel.temas?.length ? `${sel.temas.length} temas de ${cap(estadoPdf.nombre)}` : cap(texto.replace(/^(p[aá]g\w*\.?)\s*/i, 'Páginas ').slice(0, 60)) || cap(estadoPdf.nombre);
+      const subtitulo = sel.temas?.length === 1 ? cap(estadoPdf.nombre) : `Páginas ${sel.paginas[0]} a ${sel.paginas[sel.paginas.length - 1]} del PDF`;
+      const r = await desdeApartados(secs, titulo, { detalle, usarIA, subtitulo, cancelada: () => cancelado, alAvance: (f, t) => avance(0.05 + f * 0.25, usarIA ? `La IA está reescribiendo: ${t}` : `Ordenando: ${t}`) });
       slides = r.slides;
-      if (!ia.lista) avisoIA = 'Hecha sin IA, con frases extraídas de tu PDF. Enciende la IA en Dudas para que la redacte mejor.';
-      else if (r.conIA < r.total) avisoIA = `La IA redactó ${r.conIA} de ${r.total} apartados; el resto son frases extraídas de tu PDF.`;
-      else avisoIA = 'Redactada por la IA local a partir de tu PDF. Revisa los datos antes de exponerla.';
-      avance(0.88, 'Sacando las imágenes del PDF…');
-      imgs = await imagenesDe(pdfActual, sel.paginas).catch(() => []);
+      aviso = usarIA ? `Reescrita con la IA en ${r.conIA} apartados: revisa los datos. Abajo tienes el texto original de cada apartado.` : 'Las frases salen tal cual de tu PDF. Abajo tienes el texto completo de cada apartado.';
+      await recortarFiguras(pdf, slides, (f, t) => avance(0.3 + f * 0.62, t), () => cancelado);
+      const portada = slides[0];
+      const n = sel.todo ? 1 : sel.temas?.[0]?.desde;
+      if (n) { const b = await portadaDe(pdf, n).catch(() => null); if (b) portada.foto = await guardarBlob(b, `Página ${n} de tu PDF`); }
     } else {
-      const fichas = fichasDe(peticion);
-      const cap = peticion[0].toUpperCase() + peticion.slice(1);
-      tituloClase = fichas.length > 2 ? `${fichas[0].titulo} y ${fichas.length - 1} temas más` : cap.length <= 48 ? cap : fichas[0]?.titulo ?? `${cap.slice(0, 45)}…`;
-      if (fichas.length) slides = desdeTemario(fichas, tituloClase);
+      const fichas = fichasDe(texto);
+      const c = cap(texto);
+      titulo = fichas.length > 2 ? `${fichas[0].titulo} y ${fichas.length - 1} temas más` : c.length <= 48 ? c : fichas[0]?.titulo ?? `${c.slice(0, 45)}…`;
+      if (fichas.length) slides = desdeTemario(fichas, titulo);
       else if (ia.lista) {
         avance(0.3, 'La IA está escribiendo el guion. Puede tardar un par de minutos…');
-        slides = await desdeIA(peticion); avisoIA = 'Este tema no está en el temario, así que lo ha escrito la IA. Compruébalo con tus apuntes.';
+        slides = await desdeIA(texto); aviso = 'Este tema no está en el temario, así que lo ha escrito la IA. Compruébalo con tus apuntes.';
       } else throw new Error('Ese tema no está en el temario. Sube el PDF, o enciende la IA en Dudas e inténtalo otra vez.');
     }
     if (cancelado) throw new DOMException('cancelado', 'AbortError');
-    avance(0.92, 'Colocando las fotos…');
-    const fotosPdf = [];
-    for (const im of imgs) fotosPdf.push({ ...(await guardarBlob(im.blob, 'Imagen de tu PDF')), pagina: im.pagina });
-    await ponerFotos(slides, fotosPdf);
-    const clase = { id: uid(), titulo: tituloClase, tema, slides, creada: Date.now(), aviso: avisoIA, fotosPdf };
+    avance(0.95, 'Colocando las fotos…');
+    await ponerFotos(slides);
+    const clase = { id: uid(), titulo, tema, slides, creada: Date.now(), aviso };
     await guardar('clases', clase);
     ir(`#clase/${clase.id}`);
   } catch (e) {
@@ -108,24 +93,40 @@ async function crear(raiz) {
     if (e.name !== 'AbortError') fallo(e.message || 'No se ha podido crear la presentación.');
   }
 }
-
-async function ponerFotos(slides, fotosPdf) {
-  const usadas = new Set(); const libres = [...fotosPdf];
-  let enRed = 0;
+// Recorta del PDF cada figura y fórmula, y las guarda en el dispositivo.
+async function recortarFiguras(pdf, slides, avance, cancelada) {
+  const total = slides.reduce((a, s) => a + (s.figuras?.length ?? 0) + (s.ecuaciones?.length ?? 0), 0);
+  let hechas = 0;
   for (const s of slides) {
-    if (!conFoto.has(s.tipo)) continue;
-    const et = s.etiquetas?.length ? s.etiquetas : ['cuadro'];
-    const k = libres.findIndex((f) => f.pagina === s.pagina);
-    if (k >= 0) { s.foto = libres.splice(k, 1)[0]; continue; }
-    const hayEtiqueta = BANCO.some((f) => !usadas.has(f.src) && f.tags.some((t) => et.includes(t)));
-    // Internet solo aporta variedad cuando el banco se queda sin fotos de ese tema.
-    if (!hayEtiqueta && internetActivo() && enRed < 3) {
-      enRed++;
-      try {
-        const f = await Promise.race([fotoInternet(et), new Promise((_, m) => setTimeout(() => m(new Error("lento")), 5000))]);
-        if (f) { s.foto = f; continue; }
-      } catch {}
+    for (const campo of ['figuras', 'ecuaciones']) {
+      if (!s[campo]?.length) continue;
+      const salida = [];
+      for (const z of s[campo]) {
+        if (cancelada()) throw new DOMException('cancelado', 'AbortError');
+        hechas++; avance(hechas / Math.max(total, 1), `Recortando figuras del PDF: ${hechas} de ${total}`);
+        try {
+          const r = await recortar(pdf, z);
+          if (r) { const g = await guardarBlob(r.blob, ''); salida.push({ ...g, pie: z.pie ?? '', texto: z.texto ?? '', ancho: r.ancho, alto: r.alto }); }
+        } catch {}
+      }
+      s[campo] = salida;
     }
-    s.foto = libres.length && !hayEtiqueta ? libres.shift() : delBanco(et, usadas);
+    // Una diapositiva sin figuras válidas pasa a ser de solo texto.
+    if ((s.tipo === 'figura' || s.tipo === 'figuraD') && !s.figuras.length) s.tipo = s.ecuaciones?.length ? 'ecuaciones' : 'apartado';
+    if (s.tipo === 'galeria' && !s.figuras.length) s.vacia = true;
+  }
+  for (let i = slides.length - 1; i >= 0; i--) if (slides[i].vacia) slides.splice(i, 1);
+}
+async function ponerFotos(slides) {
+  const usadas = new Set(); let enRed = 0;
+  for (const s of slides) {
+    if (!conFoto.has(s.tipo) || s.foto) continue;
+    const et = s.etiquetas?.length ? s.etiquetas : ['cuadro', 'armario'];
+    const hay = BANCO.some((f) => !usadas.has(f.src) && f.tags.some((t) => et.includes(t)));
+    if (!hay && internetActivo() && enRed < 3) {
+      enRed++;
+      try { const f = await Promise.race([fotoInternet(et), new Promise((_, m) => setTimeout(() => m(new Error('lento')), 5000))]); if (f) { s.foto = f; continue; } } catch {}
+    }
+    s.foto = delBanco(et, usadas);
   }
 }

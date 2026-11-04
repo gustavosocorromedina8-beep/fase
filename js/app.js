@@ -4,20 +4,25 @@ import { ajustes } from './db.js';
 export const h = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 export const ir = (r) => { location.hash = r; };
 
-const SECCIONES = [['clases', 'Clases', 'marron'], ['dudas', 'Dudas', 'azul'], ['temario', 'Temario', 'negro'], ['calculo', 'Cálculo', 'gris'], ['ajustes', 'Ajustes', 'tierra']];
+const SECCIONES = [['clases', 'Clases', 'azul'], ['examenes', 'Exámenes', 'coral'], ['dudas', 'Dudas', 'turquesa'], ['plc', 'PLC', 'amarillo'], ['temario', 'Temario', 'negro', 1], ['calculo', 'Cálculo', 'verde', 1], ['ajustes', 'Ajustes', 'gris', 1], ['mas', 'Más', 'negro', 2]];
 const carril = document.getElementById('carril');
 const vista = document.getElementById('vista');
-carril.innerHTML = SECCIONES.map(([id, t, c]) => `<a class="pia" href="#${id}" data-id="${id}" data-hilo="${c}"><span class="pia-ranura"><span class="pia-maneta"></span></span><span class="pia-nombre">${t}</span></a>`).join('');
+carril.innerHTML = SECCIONES.map(([id, t, c, grupo]) => `<a class="pia" href="#${id}" data-id="${id}" data-hilo="${c}" ${grupo === 1 ? 'data-secundaria' : ''} ${grupo === 2 ? 'data-mas' : ''}><span class="pia-ranura"><span class="pia-maneta"></span></span><span class="pia-nombre">${t}</span></a>`).join('');
 
 let limpiar = null;
 async function enrutar() {
   const [ruta, arg] = (location.hash.slice(1) || 'clases').split('/');
-  const activa = ruta === 'clase' ? 'clases' : ruta;
-  carril.querySelectorAll('.pia').forEach((a) => { const on = a.dataset.id === activa; a.toggleAttribute('data-on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  const activa = ruta === 'clase' ? 'clases' : ruta === 'examen' ? 'examenes' : ruta;
+  const enMas = ['temario', 'calculo', 'ajustes'].includes(activa);
+  carril.querySelectorAll('.pia').forEach((a) => { const on = a.dataset.id === activa || (a.dataset.id === 'mas' && enMas); a.toggleAttribute('data-on', on); if (on) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   limpiar?.(); limpiar = null;
   vista.onclick = null; vista.classList.remove('entra'); vista.scrollTop = 0; scrollTo(0, 0);
   document.body.dataset.ruta = ruta;
   if (ruta === 'clase') { const { vistaVisor } = await import('./visor.js'); await vistaVisor(vista, arg); }
+  else if (ruta === 'examenes') { const { vistaExamenes } = await import('./examenes.js'); await vistaExamenes(vista); }
+  else if (ruta === 'examen') { const { vistaExamen } = await import('./examenes.js'); await vistaExamen(vista, arg); }
+  else if (ruta === 'plc') { const { vistaPlc } = await import('./vistaplc.js'); limpiar = vistaPlc(vista, arg); }
+  else if (ruta === 'mas') { const { vistaMas } = await import('./vistas.js'); vistaMas(vista); }
   else if (ruta === 'dudas') { const { vistaDudas } = await import('./dudas.js'); limpiar = vistaDudas(vista); }
   else if (ruta === 'temario') { const { vistaTemario } = await import('./vistas.js'); vistaTemario(vista); }
   else if (ruta === 'calculo') { const { vistaCalculo } = await import('./vistas.js'); vistaCalculo(vista); }
@@ -65,7 +70,13 @@ export function palanca(nodo) {
   });
 }
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:' && !ajustes.leer('dev', false)) navigator.serviceWorker.register('sw.js').catch(() => {});
+if ('serviceWorker' in navigator && location.protocol !== 'file:' && !ajustes.leer('dev', false)) {
+  // Si había una versión anterior y llega una nueva, se recarga una vez para estrenarla.
+  const habia = !!navigator.serviceWorker.controller;
+  let recargada = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => { if (habia && !recargada) { recargada = true; location.reload(); } });
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 enrutar();
 // Si ya estaba encendida y el modelo está guardado, se vuelve a cargar sola.
 if (ajustes.leer('iaActiva', null) && !ia.cierreAnterior()) setTimeout(() => ia.encender(ajustes.leer('iaActiva')), 800);

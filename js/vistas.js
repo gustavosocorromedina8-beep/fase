@@ -11,7 +11,7 @@ import { BANCO } from './banco.js';
 import { MODELOS, ia } from './ia.js';
 
 export function vistaTemario(raiz) {
-  raiz.innerHTML = `<section class="seccion" data-hilo="negro"><header class="cabeza"><h1>Temario</h1><p>${TEMARIO.length} fichas de estudio: REBT, automatismos, máquinas y electrónica.</p></header>
+  raiz.innerHTML = `<section class="seccion" data-hilo="negro"><header class="cabeza"><h1>Temario</h1><p>${TEMARIO.length} fichas de estudio: REBT, PLC, telecomunicaciones, renovables y más.</p></header>
     <label class="oculto" for="bt">Buscar en el temario</label><input id="bt" class="campo busca" type="search" placeholder="Buscar: diferencial, ITC-BT-25, estrella…">
     <div data-res></div></section>`;
   const res = raiz.querySelector('[data-res]');
@@ -26,8 +26,8 @@ export function vistaTemario(raiz) {
     const b = e.target.closest('[data-clase]'); if (!b) return;
     const f = TEMARIO.find((x) => x.id === b.dataset.clase);
     const slides = desdeTemario([f], f.titulo); const usadas = new Set();
-    slides.forEach((s) => { if (['portada', 'foto', 'fotoD', 'cierre'].includes(s.tipo)) s.foto = delBanco(s.etiquetas?.length ? s.etiquetas : f.fotos, usadas); });
-    const c = { id: uid(), titulo: f.titulo, tema: 'cuadro', slides, creada: Date.now() };
+    slides.forEach((s) => { if (['portada', 'foto', 'fotoD', 'cierre', 'separador'].includes(s.tipo)) s.foto = delBanco(s.etiquetas?.length ? s.etiquetas : f.fotos, usadas); });
+    const c = { id: uid(), titulo: f.titulo, tema: 'voltio', slides, creada: Date.now() };
     await guardar('clases', c); ir(`#clase/${c.id}`);
   };
 }
@@ -43,11 +43,17 @@ const CALCS = [
     f: (v) => { if (!v.P || !v.cos1 || !v.cos2) return null; return [['Qc', fmt(compensar(v).Qc, 0), 'var']]; } },
   { id: 'rpm', t: 'Velocidad de un motor', d: 'Velocidad de sincronismo. La real es algo menor.', campos: [['f', 'Frecuencia (Hz)', 50], ['pares', 'Pares de polos', 2]],
     f: (v) => (v.f && v.pares ? [['Velocidad', fmt(motorRpm(v).n, 0), 'rpm']] : null) },
+  { id: 'fv', t: 'Paneles solares necesarios', d: 'A partir del consumo diario y las horas de sol pico del lugar.', campos: [['E', 'Consumo diario (Wh)'], ['Wp', 'Potencia del panel (Wp)', 450], ['HSP', 'Horas de sol pico', 4.5], ['PR', 'Rendimiento global', 0.75]],
+    f: (v) => { if (!v.E || !v.Wp || !v.HSP || !v.PR) return null; const n = v.E / (v.Wp * v.HSP * v.PR); return [['Calculados', fmt(n), 'paneles'], ['Instalar', fmt(Math.ceil(n), 0), 'paneles']]; } },
+  { id: 'bat', t: 'Capacidad de baterías', d: 'Capacidad necesaria según la autonomía y la profundidad de descarga.', campos: [['E', 'Consumo diario (Wh)'], ['dias', 'Días de autonomía', 2], ['V', 'Tensión (V)', 24], ['dod', 'Profundidad de descarga', 0.8]],
+    f: (v) => { if (!v.E || !v.dias || !v.V || !v.dod) return null; return [['Capacidad', fmt((v.E * v.dias) / (v.V * v.dod), 0), 'Ah']]; } },
+  { id: 'db', t: 'Nivel de señal en una toma', d: 'Balance de una instalación de RTV: suma ganancias y resta pérdidas.', campos: [['ent', 'Nivel de entrada (dBµV)', 60], ['g', 'Ganancia (dB)', 30], ['a', 'Atenuación total (dB)', 25]],
+    f: (v) => { if (v.ent == null || v.g == null || v.a == null) return null; return [['En la toma', fmt(v.ent + v.g - v.a, 1), 'dBµV']]; } },
   { id: 'led', t: 'Resistencia para un LED', d: 'Resistencia en serie y la potencia que disipa.', campos: [['Vf', 'Tensión de fuente (V)', 12], ['Vled', 'Tensión del LED (V)', 2], ['mA', 'Corriente (mA)', 20]],
     f: (v) => { if (!v.Vf || !v.mA || v.Vf <= (v.Vled ?? 0)) return null; const r = resistenciaLed(v); return [['Resistencia', fmt(r.R, 0), 'Ω'], ['Potencia', fmt(r.P, 3), 'W']]; } },
 ];
 export function vistaCalculo(raiz) {
-  raiz.innerHTML = `<section class="seccion" data-hilo="gris"><header class="cabeza"><h1>Cálculo</h1><p>Fórmulas exactas, sin IA. El resultado aparece mientras escribes.</p></header>
+  raiz.innerHTML = `<section class="seccion" data-hilo="verde"><header class="cabeza"><h1>Cálculo</h1><p>Fórmulas exactas, sin IA. El resultado aparece mientras escribes.</p></header>
   <div class="calcs">${CALCS.map((c) => `<form class="calc" data-c="${c.id}"><h2>${h(c.t)}</h2><p>${h(c.d)}</p>
     <div class="calc-campos">${c.campos.map(([k, l, d]) => `<div><label for="${c.id}-${k}">${h(l)}</label><input class="campo" id="${c.id}-${k}" name="${k}" type="number" inputmode="decimal" step="any" min="0" ${d != null ? `value="${d}"` : ''}></div>`).join('')}
     ${c.tri ? `<div><label for="${c.id}-tri">Línea</label><select class="campo" id="${c.id}-tri" name="tri"><option value="">Monofásica</option><option value="1">Trifásica</option></select></div>` : ''}
@@ -68,9 +74,16 @@ export function vistaCalculo(raiz) {
   });
 }
 
+export function vistaMas(raiz) {
+  raiz.innerHTML = `<section class="seccion" data-hilo="negro"><header class="cabeza"><h1>Más</h1></header><nav class="mas-nav">
+    <a href="#temario" data-c="azul"><strong>Temario</strong>Fichas de REBT, PLC, telecomunicaciones y renovables.</a>
+    <a href="#calculo" data-c="verde"><strong>Cálculo</strong>Calculadoras con fórmulas exactas.</a>
+    <a href="#ajustes" data-c="gris"><strong>Ajustes</strong>Modelo de IA, fotos y créditos.</a></nav></section>`;
+}
+
 export function vistaAjustes(raiz) {
   const k = ajustes.leer('modelo', null);
-  raiz.innerHTML = `<section class="seccion" data-hilo="tierra"><header class="cabeza"><h1>Ajustes</h1></header>
+  raiz.innerHTML = `<section class="seccion" data-hilo="gris"><header class="cabeza"><h1>Ajustes</h1></header>
     <div class="ajuste"><div data-palanca-ia></div>
       <label for="mod">Modelo de IA</label><select id="mod" class="campo">${Object.entries(MODELOS).map(([c, m]) => `<option value="${c}">${h(m.nombre)}: ${h(m.peso)}, para ${h(m.para)}</option>`).join('')}</select>
       <p>El cambio se aplica la próxima vez que enciendas la IA. La calidad y la velocidad dependen de tu dispositivo.</p></div>

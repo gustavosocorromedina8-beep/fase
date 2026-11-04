@@ -6,7 +6,7 @@ import { ia } from './ia.js';
 import { ajustes } from './db.js';
 import { ESQUEMAS } from './esquemas.js';
 
-const SUGERENCIAS = ['¿Qué sección lleva el circuito de la lavadora?', 'Intensidad de un motor de 5,5 kW trifásico a 400 V con cos φ 0,85', '¿Cuáles son las cinco reglas de oro?', '¿Cómo funciona la realimentación en un marcha-paro?'];
+const SUGERENCIAS = ['¿Qué es el lenguaje KOP?', '¿Cómo se dimensiona una instalación solar?', '¿Qué sección lleva el circuito de la lavadora?', 'Intensidad de un motor de 5,5 kW trifásico a 400 V con cos φ 0,85', '¿Cuáles son las cinco reglas de oro?', '¿Cómo funciona la realimentación en un marcha-paro?'];
 const GLOSARIO = 'REBT: Reglamento Electrotécnico para Baja Tensión (una norma, no un aparato). ITC: Instrucción Técnica Complementaria. PIA: pequeño interruptor automático o magnetotérmico. IGA: interruptor general automático. ID: interruptor diferencial. CGP: caja general de protección. LGA: línea general de alimentación. DI: derivación individual. PLC: autómata programable.';
 const SISTEMA = `Eres profesor de un ciclo de FP de Instalaciones Eléctricas y Automáticas en España. Responde en español, en un máximo de 5 frases sencillas.
 Reglas: usa solo hechos que sepas con seguridad; basa la respuesta en el TEMARIO si trata el tema; no des cifras ni artículos que no aparezcan en el TEMARIO; no inventes siglas; si no lo sabes, responde exactamente «No estoy seguro: consúltalo en tus apuntes».
@@ -35,7 +35,7 @@ function burbuja(m) {
   return `<div class="msg msg-app" data-origen="${m.origen}">${cuerpo}${m.atascada ? '<p class="sospecha">La IA se ha atascado con esta pregunta: su respuesta no es de fiar.</p>' : ''}${m.dudosas?.length ? `<p class="sospecha">Ojo: estas cifras no están en el temario: ${h(m.dudosas.join(', '))}.</p>` : ''}${origen ? `<p class="origen">${h(origen)}${m.origen === 'temario' && m.fuentes?.length ? ` Fuente: ${h(m.fuentes.join('; '))}.` : ''}</p>` : ''}</div>`;
 }
 export function vistaDudas(raiz) {
-  raiz.innerHTML = `<section class="seccion seccion-chat" data-hilo="azul">
+  raiz.innerHTML = `<section class="seccion seccion-chat" data-hilo="turquesa">
     <header class="cabeza cabeza-chat"><h1>Dudas</h1><div data-palanca-ia></div></header>
     <div class="conversacion" data-conv aria-live="polite"></div>
     <form class="redactar" data-form><label class="oculto" for="preg">Tu pregunta</label>
@@ -44,7 +44,7 @@ export function vistaDudas(raiz) {
   </section>`;
   const conv = raiz.querySelector('[data-conv]');
   const pintar = () => {
-    conv.innerHTML = hilo.length ? hilo.map(burbuja).join('') : `<div class="inicio-chat"><p>Los cálculos son exactos y las fichas te dan la base. Para preguntas libres, enciende la IA con la palanca.</p><div class="sugerencias">${SUGERENCIAS.map((s) => `<button type="button" class="btn sug" data-s="${h(s)}">${h(s)}</button>`).join('')}</div></div>`;
+    conv.innerHTML = hilo.length ? hilo.map(burbuja).join('') : `<div class="inicio-chat"><p>Los cálculos son exactos y las fichas te dan la base. Para preguntas libres, enciende la IA con la palanca.</p><div class="sugerencias">${SUGERENCIAS.slice(0, 5).map((s) => `<button type="button" class="btn sug" data-s="${h(s)}">${h(s)}</button>`).join('')}</div></div>`;
     conv.scrollTop = conv.scrollHeight;
     if (hilo.length) { const b = document.createElement('button'); b.className = 'enlace limpiar'; b.textContent = 'Borrar la conversación'; b.onclick = () => { hilo = []; ajustes.poner('chat', hilo); pintar(); }; conv.prepend(b); }
   };

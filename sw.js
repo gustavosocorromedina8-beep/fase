@@ -1,7 +1,7 @@
 // Guarda la app para que funcione sin conexión. El modelo de IA lo guarda aparte su propia librería.
 importScripts('archivos.js');
 const CACHE = `fase-${self.VERSION}`;
-self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(self.ARCHIVOS)).then(() => self.skipWaiting())));
+self.addEventListener('install', (e) => e.waitUntil(caches.open(CACHE).then((c) => c.addAll(self.ARCHIVOS.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting())));
 self.addEventListener('activate', (e) => e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k.startsWith('fase-') && k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', (e) => {
   const u = new URL(e.request.url);

@@ -21,4 +21,18 @@ for (const q of ['¿Cuáles son las cinco reglas de oro?', '¿Qué es un diferen
 const esperado = { 'qué sección lleva el circuito de la lavadora': 'circuitos-vivienda', 'cinco reglas de oro': 'reglas-oro', 'realimentación marcha-paro': 'marcha-paro', 'colores de los cables': 'colores', 'puesta a tierra': 'tierra', 'arranque estrella triángulo': 'arranque', 'qué es el régimen de neutro TT': 'neutro', 'qué es un PLC': 'plc', 'curvas del magnetotérmico': 'magnetotermico', 'volumen de un baño': 'banos' };
 for (const [q, id] of Object.entries(esperado)) assert.equal(buscar(q, 1)[0]?.f.id, id, q);
 assert.equal(buscar('receta de paella', 1).length, 0);
+// Simulador de PLC
+const { Simulador, programa, PROGRAMAS } = await import('../js/plc.js');
+const paso = (s, n = 1, dt = 100) => { for (let i = 0; i < n; i++) s.ciclo(dt); };
+let s1 = new Simulador(programa('marcha-paro')); s1.poner('I0.0', true); paso(s1); s1.poner('I0.0', false); paso(s1, 3); assert.equal(s1.mem['Q0.0'], true); s1.poner('I0.1', false); paso(s1); assert.equal(s1.mem['Q0.0'], false);
+s1 = new Simulador(programa('inversion')); s1.poner('I0.0', true); paso(s1); s1.poner('I0.0', false); s1.poner('I0.1', true); paso(s1, 3); assert.equal(s1.mem['Q0.1'], false);
+s1 = new Simulador(programa('estrella')); s1.poner('I0.0', true); paso(s1, 2); s1.poner('I0.0', false); assert.equal(s1.mem['Q0.1'], true); paso(s1, 60); assert.equal(s1.mem['Q0.1'], false); assert.equal(s1.mem['Q0.2'], true);
+s1 = new Simulador(programa('contador')); for (let i = 0; i < 5; i++) { s1.poner('I0.0', true); paso(s1, 2); s1.poner('I0.0', false); paso(s1, 2); } assert.equal(s1.c.C1, 5); paso(s1); assert.equal(s1.mem['Q0.0'], true);
+assert.equal(PROGRAMAS.length, 12);
+// Lectura: las notas al margen no se mezclan con el texto principal
+const { apartados, analizarDocumento } = await import('../js/lectura.js');
+const it = (s, x, y, h = 11, w = s.length * 5) => ({ s, x, y, h, w, f: 'n' });
+const pag = { n: 1, x0: 0, base: 0, ancho: 600, alto: 800, items: [it('1. Tema de prueba', 80, 700, 20), ...Array.from({ length: 12 }, (_, i) => it('Linea larga de texto principal que ocupa el ancho de la columna del libro', 80, 660 - i * 13)), it('Nota al margen', 460, 660, 9)] };
+const secc = apartados([pag], analizarDocumento([pag]));
+assert.equal(secc[0].titulo, '1. Tema de prueba'); assert.ok(!secc[0].parrafos.map((p) => p.texto).join(' ').includes('Nota al margen'));
 console.log('Todas las pruebas pasan');

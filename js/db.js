@@ -2,8 +2,8 @@
 let conexion;
 function abrir() {
   return (conexion ??= new Promise((ok, mal) => {
-    const r = indexedDB.open('fase', 1);
-    r.onupgradeneeded = () => { r.result.createObjectStore('clases', { keyPath: 'id' }); r.result.createObjectStore('fotos', { keyPath: 'id' }); };
+    const r = indexedDB.open('fase', 2);
+    r.onupgradeneeded = () => { for (const a of ['clases', 'fotos', 'examenes']) if (!r.result.objectStoreNames.contains(a)) r.result.createObjectStore(a, { keyPath: 'id' }); };
     r.onsuccess = () => ok(r.result); r.onerror = () => mal(r.error);
   }));
 }
